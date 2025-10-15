@@ -50,7 +50,7 @@ export interface AppProps {
  * ```
  */
 export default function App(
-  { title }: AppProps = { title: "Neynar Starter Kit" }
+  { title }: AppProps = { title: "Evermark Protocol" }
 ) {
   // --- Hooks ---
   const {

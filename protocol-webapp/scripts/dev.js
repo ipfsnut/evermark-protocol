@@ -4,6 +4,7 @@ import { createServer } from 'net';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -145,7 +146,14 @@ async function startDev() {
   }
   
   // Start next dev with appropriate configuration
-  const nextBin = path.normalize(path.join(projectRoot, 'node_modules', '.bin', 'next'));
+  // Check for Next.js binary in workspace root or local node_modules
+  const workspaceRoot = path.resolve(projectRoot, '..');
+  let nextBin = path.normalize(path.join(workspaceRoot, 'node_modules', '.bin', 'next'));
+  
+  // Fallback to local node_modules if workspace doesn't have it
+  if (!existsSync(nextBin)) {
+    nextBin = path.normalize(path.join(projectRoot, 'node_modules', '.bin', 'next'));
+  }
 
   nextDev = spawn(nextBin, ['dev', '-p', port.toString()], {
     stdio: 'inherit',

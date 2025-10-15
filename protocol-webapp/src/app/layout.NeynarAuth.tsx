@@ -20,7 +20,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers session={session}>
+        <Providers>
           {children}
         </Providers>
       </body>
