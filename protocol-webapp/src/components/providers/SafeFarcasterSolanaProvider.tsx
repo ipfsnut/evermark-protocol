@@ -1,14 +1,10 @@
 import React from "react";
 
-type SafeFarcasterProviderProps = {
+type BaseProviderProps = {
   children: React.ReactNode;
 };
 
-// Simplified provider for Base chain only (no Solana needed)
-export function SafeFarcasterSolanaProvider({ children }: SafeFarcasterProviderProps) {
+// Base chain provider (no Solana)
+export function BaseProvider({ children }: BaseProviderProps) {
   return <>{children}</>;
-}
-
-export function useHasSolanaProvider() {
-  return false; // Always false since we don't use Solana
 }
