@@ -19,6 +19,12 @@ import { type AccountAssociation } from '@farcaster/miniapp-core/src/manifest';
 export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
 
 /**
+ * The base URL for the Everservice API backend.
+ * Used for making API calls to the backend service.
+ */
+export const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
+/**
  * The name of the mini app as displayed to users.
  * Used in titles, headers, and app store listings.
  */

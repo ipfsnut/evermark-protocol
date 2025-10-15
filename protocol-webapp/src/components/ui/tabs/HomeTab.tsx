@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "../Button";
+import { API_BASE_URL } from "~/lib/constants";
 
 /**
  * HomeTab component displays the main Evermark Protocol interface.
@@ -24,8 +25,7 @@ export function HomeTab() {
     
     try {
       // Call everservice API to create evermark
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiBaseUrl}/api/evermarks`, {
+      const response = await fetch(`${API_BASE_URL}/api/evermarks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
