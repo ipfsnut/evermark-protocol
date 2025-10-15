@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AccurateArDrivePricing } from '@evermark/metadata-kit';
+import { AccurateArDrivePricing } from '@ipfsnut/evermark-metadata-kit';
 
 export async function POST(request: NextRequest) {
   try {

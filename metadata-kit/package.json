@@ -1,5 +1,5 @@
 {
-  "name": "@evermark/metadata-kit",
+  "name": "@ipfsnut/evermark-metadata-kit",
   "version": "1.0.0",
   "description": "Content extraction and metadata processing SDK for Evermark Protocol",
   "main": "dist/index.js",
