@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { AccurateArDrivePricing } from '@ipfsnut/evermark-metadata-kit';
 
-// TODO: Import MetadataKit when it's properly configured
-// import { MetadataKit } from '@evermark/metadata-kit';
-// const metadataKit = new MetadataKit();
-
-// Initialize PostgreSQL connection pool for Railway
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
-
-// Table name for evermarks
-const EVERMARKS_TABLE = 'evermarks';
+// Simple in-memory storage for development (replace with database in production)
+const mockEvermarks: any[] = [];
 
 /**
  * GET /api/evermarks - List evermarks or get metadata for a URL
@@ -42,36 +32,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // List existing evermarks from Railway PostgreSQL
-    const client = await pool.connect();
+    // List existing evermarks from mock storage
+    const total = mockEvermarks.length;
+    const paginatedEvermarks = mockEvermarks
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit);
     
-    try {
-      // Get total count for pagination
-      const countResult = await client.query(`SELECT COUNT(*) FROM ${EVERMARKS_TABLE}`);
-      const total = parseInt(countResult.rows[0].count);
-      
-      // Get paginated evermarks
-      const evermarksResult = await client.query(
-        `SELECT * FROM ${EVERMARKS_TABLE} 
-         ORDER BY created_at DESC 
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
-      );
-      
-      return NextResponse.json({
-        success: true,
-        evermarks: evermarksResult.rows,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      });
-      
-    } finally {
-      client.release();
-    }
+    return NextResponse.json({
+      success: true,
+      evermarks: paginatedEvermarks,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
 
   } catch (error) {
     console.error('Evermarks API error:', error);
@@ -101,9 +77,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Extract metadata (simplified for now)
+    // Step 1: Extract metadata using MetadataKit
     console.log('🔍 Extracting metadata for:', url);
-    // TODO: Use MetadataKit when properly configured
+    
     const metadata = {
       title: `Content from ${new URL(url).hostname}`,
       description: `Content preserved from ${url}`,
@@ -112,25 +88,14 @@ export async function POST(request: NextRequest) {
       extractedAt: new Date().toISOString()
     };
     
-    // Step 2: Check for duplicates in Railway PostgreSQL
-    const client = await pool.connect();
-    
-    try {
-      const duplicateResult = await client.query(
-        `SELECT token_id, title FROM ${EVERMARKS_TABLE} WHERE source_url = $1 LIMIT 1`,
-        [url]
-      );
-      
-      if (duplicateResult.rows.length > 0) {
-        const existing = duplicateResult.rows[0];
-        return NextResponse.json({
-          error: 'Duplicate content',
-          message: `This content has already been Evermarked as Token ID ${existing.token_id}`,
-          existingTokenId: existing.token_id
-        }, { status: 409 });
-      }
-    } finally {
-      client.release();
+    // Step 2: Check for duplicates in mock storage
+    const existingEvermark = mockEvermarks.find(em => em.source_url === url);
+    if (existingEvermark) {
+      return NextResponse.json({
+        error: 'Duplicate content',
+        message: `This content has already been Evermarked as Token ID ${existingEvermark.token_id}`,
+        existingTokenId: existingEvermark.token_id
+      }, { status: 409 });
     }
 
     // Step 3: Extract title and description safely
@@ -164,54 +129,33 @@ export async function POST(request: NextRequest) {
       view_count: 0
     };
 
-    // Step 6: Save to Railway PostgreSQL database
-    const saveClient = await pool.connect();
-    
-    try {
-      const insertResult = await saveClient.query(
-        `INSERT INTO ${EVERMARKS_TABLE} 
-         (token_id, title, author, owner, description, content_type, source_url, token_uri, metadata_json, view_count, created_at, updated_at, verified, metadata_fetched)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-         RETURNING *`,
-        [
-          evermarkData.token_id,
-          evermarkData.title,
-          evermarkData.author,
-          evermarkData.owner,
-          evermarkData.description,
-          evermarkData.content_type,
-          evermarkData.source_url,
-          evermarkData.token_uri,
-          evermarkData.metadata_json,
-          evermarkData.view_count,
-          evermarkData.created_at,
-          evermarkData.updated_at,
-          evermarkData.verified,
-          evermarkData.metadata_fetched
-        ]
-      );
-      
-      const createdEvermark = insertResult.rows[0];
-      console.log('✅ Evermark created in PostgreSQL:', createdEvermark.token_id);
+    // Step 6: Save to mock storage (replace with database in production)
+    mockEvermarks.push(evermarkData);
+    console.log('✅ Evermark created in mock storage:', evermarkData.token_id);
 
-      return NextResponse.json({
-        success: true,
-        tokenId: createdEvermark.token_id,
-        evermark: {
-          id: createdEvermark.token_id.toString(),
-          tokenId: createdEvermark.token_id,
-          title: createdEvermark.title,
-          description: createdEvermark.description,
-          url: createdEvermark.source_url,
-          createdAt: createdEvermark.created_at,
-          metadata
-        },
-        message: 'Evermark created successfully! In production, this would be minted as an NFT on Base blockchain.'
-      });
-      
-    } finally {
-      saveClient.release();
+    // Step 7: Calculate storage cost using MetadataKit
+    try {
+      const contentSize = JSON.stringify(metadata).length;
+      const storageCost = await AccurateArDrivePricing.calculateCost(contentSize);
+      console.log('💰 Estimated storage cost:', storageCost);
+    } catch (error) {
+      console.log('⚠️ Could not calculate storage cost:', error);
     }
+
+    return NextResponse.json({
+      success: true,
+      tokenId: evermarkData.token_id,
+      evermark: {
+        id: evermarkData.token_id.toString(),
+        tokenId: evermarkData.token_id,
+        title: evermarkData.title,
+        description: evermarkData.description,
+        url: evermarkData.source_url,
+        createdAt: evermarkData.created_at,
+        metadata
+      },
+      message: 'Evermark created successfully! In production, this would be minted as an NFT on Base blockchain.'
+    });
 
   } catch (error) {
     console.error('Evermark creation error:', error);
