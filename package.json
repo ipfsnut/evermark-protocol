@@ -1,0 +1,47 @@
+{
+  "name": "evermark-protocol-workspace",
+  "version": "1.0.0",
+  "description": "LLM-powered digital memory platform with blockchain ownership and permanent storage",
+  "private": true,
+  "workspaces": [
+    "protocol-webapp",
+    "everservice",
+    "metadata-kit"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "setup": "npm install && npm run build",
+    "typecheck": "npm run typecheck --workspaces"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=22.11.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dylanair/evermark-protocol"
+  },
+  "keywords": [
+    "farcaster",
+    "blockchain",
+    "llm",
+    "digital-memory",
+    "content-archiving",
+    "semantic-search",
+    "web3",
+    "arweave",
+    "ipfs"
+  ],
+  "author": "Dylan Air",
+  "license": "MIT"
+}

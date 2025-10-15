@@ -1,0 +1,46 @@
+{
+  "name": "Evermark Protocol Contracts",
+  "network": "base",
+  "chainId": 8453,
+  "deployedAt": "2025-01-01",
+  "contracts": {
+    "EMARK": {
+      "address": "0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07",
+      "description": "$EMARK token contract"
+    },
+    "WEMARK": {
+      "address": "0xDf756488A3A27352ED1Be38A94f6621A6CE2Ce15",
+      "description": "Wrapped EMARK for staking"
+    },
+    "EvermarkNFT": {
+      "address": "0x504a0BDC3aea29237a6f8E53D0ECDA8e4c9009F2",
+      "implementation": "0x8Bfc2630f2A10A3Dd349Bb031250d242D1A323EF",
+      "description": "Evermark NFT contract for content archiving"
+    },
+    "EvermarkVoting": {
+      "address": "0x5089FE55368E40c8990214Ca99bd2214b34A179D",
+      "description": "Voting and curation contract"
+    },
+    "EvermarkRewards": {
+      "address": "0x88E5C57FFC8De966eD789ebd5A8E3B290Ed2B55C",
+      "implementation": "0xec605312C073a2dD061386a8D53fC2fD0c89EF84",
+      "description": "Rewards distribution contract"
+    },
+    "NFTStaking": {
+      "address": "0x95f9aaDb35E74aba92DAAFfe1Ae74Cb467149210",
+      "implementation": "0x0b9e94669438A7033836867cFE25e0321b83E3A7",
+      "description": "NFT staking for voting power"
+    },
+    "FeeCollector": {
+      "address": "0xaab93405679576ec743fDAA57AA603D949850604",
+      "description": "Protocol fee collection"
+    },
+    "Marketplace": {
+      "address": "0x56b178A3AA23d323Ae9d8E85Bd633f2F5Ff98FAD",
+      "description": "Thirdweb marketplace for NFT trading"
+    }
+  },
+  "external": {
+    "clanker": "https://www.clanker.world/clanker/0xf87F3ebbF8CaCF321C2a4027bb66Df639a6f4B07"
+  }
+}
