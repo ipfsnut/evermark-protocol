@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.0",
-    "@ipfsnut/evermark-metadata-kit": "workspace:*",
+    "@ipfsnut/evermark-metadata-kit": "file:../metadata-kit",
     "@prisma/client": "^5.20.0",
     "@supabase/supabase-js": "^2.52.1",
     "@types/pg": "^8.15.5",
