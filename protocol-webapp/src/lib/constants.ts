@@ -20,9 +20,10 @@ export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
 
 /**
  * The base URL for the Everservice API backend.
- * Used for making API calls to the backend service.
+ * Points to the Railway-deployed everservice backend.
+ * Get this URL from your Railway dashboard: railway.app/project/[project-id]
  */
-export const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+export const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://[YOUR-RAILWAY-URL].up.railway.app';
 
 /**
  * The name of the mini app as displayed to users.
