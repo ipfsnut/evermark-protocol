@@ -1,4 +1,4 @@
-import { MetadataKit } from '@evermark/metadata-kit';
+import { MetadataKit } from '@ipfsnut/evermark-metadata-kit';
 
 export interface SavedContent {
   id: string;

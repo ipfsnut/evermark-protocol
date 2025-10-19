@@ -1,4 +1,4 @@
-import { MetadataKit } from '@evermark/metadata-kit';
+import { MetadataKit } from '@ipfsnut/evermark-metadata-kit';
 import { BotContentService } from './contentService';
 
 export interface BotCommand {
