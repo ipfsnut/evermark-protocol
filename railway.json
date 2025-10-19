@@ -6,7 +6,7 @@
     "watchPatterns": ["everservice/**"]
   },
   "deploy": {
-    "startCommand": "cd everservice && npm start",
+    "startCommand": "cd everservice && PORT=$PORT npm start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
