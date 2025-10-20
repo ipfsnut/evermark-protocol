@@ -66,6 +66,10 @@ Thumbs.db
 tmp/
 temp/
 
+# Planning and analysis documents
+/plans/
+plans/
+
 # Testing
 coverage/
 .nyc_output/
