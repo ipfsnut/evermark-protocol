@@ -1,12 +1,24 @@
 import { createConfig, http, WagmiProvider } from "wagmi";
-import { defineChain } from 'viem';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { farcasterFrame } from "@farcaster/miniapp-wagmi-connector";
 import { createConnector } from 'wagmi';
 import { APP_NAME, APP_ICON_URL } from "~/lib/constants";
+import { base, mainnet } from "~/lib/chains";
 import { useEffect, useState } from "react";
 import { useConnect, useAccount } from "wagmi";
 import React from "react";
+
+// Add window.ethereum types
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      isCoinbaseWallet?: boolean;
+      isCoinbaseWalletExtension?: boolean;
+      isCoinbaseWalletBrowser?: boolean;
+    };
+  }
+}
 
 // Custom hook for Coinbase Wallet detection and auto-connection
 function useCoinbaseWalletAutoConnect() {
@@ -41,30 +53,60 @@ function useCoinbaseWalletAutoConnect() {
   return isCoinbaseWallet;
 }
 
-// Define chains manually to avoid import issues
-const base = defineChain({
-  id: 8453,
-  name: 'Base',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://mainnet.base.org'] },
+// Create a basic injected connector manually to avoid importing problematic connectors
+const basicInjected = createConnector((config) => ({
+  id: 'injected',
+  name: 'Injected',
+  type: 'injected',
+  async connect() {
+    const provider = window.ethereum;
+    if (!provider) throw new Error('No injected provider found');
+    
+    const accounts = await provider.request({ method: 'eth_requestAccounts' });
+    const chainId = await provider.request({ method: 'eth_chainId' });
+    
+    return {
+      accounts: accounts.map((account: string) => account as `0x${string}`),
+      chainId: Number(chainId),
+    };
   },
-  blockExplorers: {
-    default: { name: 'BaseScan', url: 'https://basescan.org' },
+  async disconnect() {
+    // Most injected wallets don't support programmatic disconnect
   },
-});
-
-const mainnet = defineChain({
-  id: 1,
-  name: 'Ethereum',
-  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-  rpcUrls: {
-    default: { http: ['https://eth-mainnet.g.alchemy.com/v2/demo'] },
+  async getAccounts() {
+    const provider = window.ethereum;
+    if (!provider) return [];
+    
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    return accounts.map((account: string) => account as `0x${string}`);
   },
-  blockExplorers: {
-    default: { name: 'Etherscan', url: 'https://etherscan.io' },
+  async getChainId() {
+    const provider = window.ethereum;
+    if (!provider) throw new Error('No injected provider found');
+    
+    const chainId = await provider.request({ method: 'eth_chainId' });
+    return Number(chainId);
   },
-});
+  async isAuthorized() {
+    const provider = window.ethereum;
+    if (!provider) return false;
+    
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    return accounts.length > 0;
+  },
+  onAccountsChanged(accounts) {
+    config.emitter.emit('change', { accounts: accounts.map((account: string) => account as `0x${string}`) });
+  },
+  onChainChanged(chainId) {
+    config.emitter.emit('change', { chainId: Number(chainId) });
+  },
+  onConnect(connectInfo) {
+    config.emitter.emit('connect', connectInfo);
+  },
+  onDisconnect(error) {
+    config.emitter.emit('disconnect', error);
+  },
+}));
 
 export const config = createConfig({
   chains: [base, mainnet],
@@ -74,7 +116,7 @@ export const config = createConfig({
   },
   connectors: [
     farcasterFrame(),
-    injected(),
+    basicInjected(),
   ],
 });
 
