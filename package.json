@@ -19,9 +19,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.5.0",
     "eslint": "^9.0.0",
-    "prettier": "^3.3.0"
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0"
   },
   "engines": {
     "node": ">=22.11.0",
@@ -43,5 +43,8 @@
     "ipfs"
   ],
   "author": "Dylan Air",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "run-parallel": "^1.2.0"
+  }
 }
