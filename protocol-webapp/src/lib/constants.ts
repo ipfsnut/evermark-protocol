@@ -23,7 +23,7 @@ export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
  * Points to the Railway-deployed everservice backend.
  * Get this URL from your Railway dashboard: railway.app/project/[project-id]
  */
-export const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://[YOUR-RAILWAY-URL].up.railway.app';
+export const API_BASE_URL: string = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://evermark-protocol-production.up.railway.app';
 
 /**
  * The name of the mini app as displayed to users.
