@@ -18,6 +18,7 @@
     "@farcaster/miniapp-node": "^0.1.10",
     "@farcaster/miniapp-sdk": "^0.2.0",
     "@farcaster/miniapp-wagmi-connector": "^1.1.0",
+    "@metamask/sdk": "^0.33.1",
     "@neynar/nodejs-sdk": "^2.19.0",
     "@neynar/react": "^1.2.5",
     "@radix-ui/react-label": "^2.1.7",
@@ -25,6 +26,7 @@
     "@vercel/sdk": "^1.13.9",
     "abitype": "^1.0.8",
     "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dotenv": "^16.4.7",
     "next": "^15.0.0",
     "next-auth": "^4.24.11",
@@ -35,8 +37,8 @@
     "tailwindcss-animate": "^1.0.7",
     "thirdweb": "^5.101.0",
     "typescript": "^5.6.0",
-    "viem": "^2.23.6",
-    "wagmi": "^2.15.0"
+    "viem": "^2.38.3",
+    "wagmi": "^2.18.1"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.9",
