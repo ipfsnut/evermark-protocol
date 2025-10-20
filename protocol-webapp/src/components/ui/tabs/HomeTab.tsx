@@ -12,10 +12,21 @@ import { API_BASE_URL } from "~/lib/constants";
  * - View recent activity and stats
  * - Access core Evermark functionality
  */
+interface ProcessingResult {
+  type: 'success' | 'error' | 'info';
+  message: string;
+  details?: {
+    tokenId?: number;
+    contentType?: string;
+    ipfsHash?: string;
+    title?: string;
+  };
+}
+
 export function HomeTab() {
   const [url, setUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<ProcessingResult | null>(null);
 
   const handleCreateEvermark = async () => {
     if (!url.trim()) return;
@@ -24,6 +35,8 @@ export function HomeTab() {
     setResult(null);
     
     try {
+      console.log('🚀 Creating Evermark for:', url.trim());
+      
       // Call everservice API to create evermark
       const response = await fetch(`${API_BASE_URL}/api/evermarks`, {
         method: 'POST',
@@ -33,17 +46,33 @@ export function HomeTab() {
         body: JSON.stringify({ url: url.trim() }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setResult(`✅ Evermark created! Token ID: ${data.tokenId}`);
+      const data = await response.json();
+      console.log('📄 API Response:', data);
+
+      if (response.ok && data.success) {
+        setResult({
+          type: 'success',
+          message: `🎉 Evermark created successfully!`,
+          details: {
+            tokenId: data.tokenId,
+            contentType: data.metadata?.contentType,
+            ipfsHash: data.ipfsHash,
+            title: data.metadata?.title
+          }
+        });
         setUrl("");
       } else {
-        const error = await response.json();
-        setResult(`❌ Error: ${error.message || 'Failed to create Evermark'}`);
+        setResult({
+          type: 'error',
+          message: `❌ ${data.message || data.error || 'Failed to create Evermark'}`,
+        });
       }
     } catch (error) {
       console.error("Error creating Evermark:", error);
-      setResult(`❌ Network error. Please try again.`);
+      setResult({
+        type: 'error',
+        message: `❌ Network error. Please check your connection and try again.`,
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -81,7 +110,7 @@ export function HomeTab() {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="Paste URL (Twitter, Farcaster cast, article, etc.)"
             className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white text-sm"
             disabled={isProcessing}
@@ -105,11 +134,21 @@ export function HomeTab() {
 
         {result && (
           <div className={`p-3 rounded-lg text-sm ${
-            result.startsWith('✅') 
+            result.type === 'success' 
               ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
-              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+              : result.type === 'error'
+              ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+              : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
           }`}>
-            {result}
+            <div className="font-medium">{result.message}</div>
+            {result.details && (
+              <div className="mt-2 text-xs space-y-1">
+                {result.details.tokenId && <div>🏷️ Token ID: {result.details.tokenId}</div>}
+                {result.details.title && <div>📝 Title: {result.details.title}</div>}
+                {result.details.contentType && <div>📂 Type: {result.details.contentType}</div>}
+                {result.details.ipfsHash && <div>🔗 IPFS: {result.details.ipfsHash.slice(0, 16)}...</div>}
+              </div>
+            )}
           </div>
         )}
       </div>

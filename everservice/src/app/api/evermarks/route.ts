@@ -1,60 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AccurateArDrivePricing } from '@ipfsnut/evermark-metadata-kit';
-
-// Simple in-memory storage for development (replace with database in production)
-const mockEvermarks: any[] = [];
+import { EvermarkService } from '../../../services/EvermarkService';
+import { getRecentEvermarks } from '../../../lib/database';
+import type { EvermarkCreationRequest } from '../../../types/evermark';
 
 /**
- * GET /api/evermarks - List evermarks or get metadata for a URL
+ * GET /api/evermarks - List recent evermarks
  */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const url = searchParams.get('url');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
-    const offset = (page - 1) * limit;
     
-    // If URL provided, extract metadata (simplified for now)
-    if (url) {
-      // TODO: Use MetadataKit when properly configured
-      const metadata = {
-        title: 'Sample Title',
-        description: 'Sample description from URL',
-        url,
-        type: 'web-content'
-      };
-      
-      return NextResponse.json({
-        success: true,
-        metadata,
-        timestamp: new Date().toISOString()
-      });
-    }
+    console.log('📋 Fetching recent Evermarks:', { page, limit });
 
-    // List existing evermarks from mock storage
-    const total = mockEvermarks.length;
-    const paginatedEvermarks = mockEvermarks
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(offset, offset + limit);
+    // Get recent evermarks from database
+    const evermarks = await getRecentEvermarks(limit);
+    
+    // Transform database records to API format
+    const transformedEvermarks = evermarks.map(evermark => ({
+      id: evermark.tokenId.toString(),
+      tokenId: evermark.tokenId,
+      title: evermark.title,
+      author: evermark.author || 'Unknown',
+      description: evermark.description || '',
+      contentType: evermark.contentType || 'URL',
+      sourceUrl: evermark.sourceUrl,
+      createdAt: evermark.createdAt.toISOString(),
+      updatedAt: evermark.updatedAt.toISOString(),
+      verified: evermark.verified,
+      user: evermark.user ? {
+        username: evermark.user.username,
+        displayName: evermark.user.displayName,
+        pfpUrl: evermark.user.pfpUrl
+      } : null,
+      voteCount: evermark.votes?.reduce((sum, vote) => sum + vote.weight, 0) || 0,
+      // IPFS and processing info
+      ipfsHash: evermark.ipfsMetadataHash,
+      imageUrl: evermark.supabaseImageUrl || evermark.thumbnailUrl,
+      processingStatus: evermark.imageProcessingStatus || 'pending'
+    }));
     
     return NextResponse.json({
       success: true,
-      evermarks: paginatedEvermarks,
+      evermarks: transformedEvermarks,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: transformedEvermarks.length, // TODO: Get actual total from database
+        totalPages: Math.ceil(transformedEvermarks.length / limit),
       },
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('Evermarks API error:', error);
+    console.error('❌ GET Evermarks API error:', error);
     
     return NextResponse.json(
       { 
-        error: 'Failed to process request',
+        error: 'Failed to fetch evermarks',
         message: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
@@ -68,7 +72,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
+    const { url, userFid } = body;
+    
+    console.log('🚀 Creating Evermark for URL:', url, 'userFid:', userFid);
     
     if (!url) {
       return NextResponse.json(
@@ -77,88 +83,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Extract metadata using MetadataKit
-    console.log('🔍 Extracting metadata for:', url);
-    
-    const metadata = {
-      title: `Content from ${new URL(url).hostname}`,
-      description: `Content preserved from ${url}`,
-      url,
-      type: 'web-content',
-      extractedAt: new Date().toISOString()
+    // Validate URL format
+    if (!EvermarkService.isValidUrl(url)) {
+      return NextResponse.json(
+        { error: 'Invalid URL format' },
+        { status: 400 }
+      );
+    }
+
+    // Create Evermark creation request
+    const createRequest: EvermarkCreationRequest = {
+      url: url.trim(),
+      userFid: userFid || undefined
     };
+
+    // Use EvermarkService to handle the entire creation pipeline
+    const result = await EvermarkService.createEvermark(createRequest);
     
-    // Step 2: Check for duplicates in mock storage
-    const existingEvermark = mockEvermarks.find(em => em.source_url === url);
-    if (existingEvermark) {
+    if (result.success) {
+      console.log('✅ Evermark created successfully:', result.tokenId);
+      
       return NextResponse.json({
-        error: 'Duplicate content',
-        message: `This content has already been Evermarked as Token ID ${existingEvermark.token_id}`,
-        existingTokenId: existingEvermark.token_id
-      }, { status: 409 });
+        success: true,
+        tokenId: result.tokenId,
+        metadata: result.metadata,
+        ipfsHash: result.ipfsHash,
+        txHash: result.txHash,
+        evermark: {
+          id: result.tokenId?.toString(),
+          tokenId: result.tokenId,
+          title: result.metadata?.title,
+          description: result.metadata?.description,
+          contentType: result.metadata?.contentType,
+          url: result.metadata?.sourceUrl,
+          createdAt: new Date().toISOString(),
+          ipfsHash: result.ipfsHash,
+          processing: true // Indicates background processing may still be occurring
+        },
+        message: 'Evermark created successfully! Content has been processed and stored on IPFS.'
+      });
+    } else {
+      console.error('❌ Evermark creation failed:', result.error);
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to create evermark',
+          message: result.error || 'Unknown error during creation'
+        },
+        { status: 500 }
+      );
     }
-
-    // Step 3: Extract title and description safely
-    const extractedTitle = metadata.title || 'Evermark';
-    const extractedDescription = metadata.description || 'Content preserved via Evermark Protocol';
-
-    // Step 4: Generate a mock token ID (in production, this would come from blockchain)
-    const mockTokenId = Math.floor(Math.random() * 1000000) + 1000;
-
-    // Step 5: Prepare Evermark data
-    const evermarkData = {
-      token_id: mockTokenId,
-      title: extractedTitle,
-      author: 'Farcaster User', // This would come from Farcaster context
-      owner: '0x0000000000000000000000000000000000000000', // Mock address
-      description: extractedDescription,
-      content_type: 'Web Content',
-      source_url: url,
-      token_uri: `https://evermark.epicdylan.com/evermarks/${mockTokenId}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      metadata_fetched: true,
-      verified: false,
-      metadata_json: JSON.stringify({
-        title: extractedTitle,
-        description: extractedDescription,
-        url,
-        timestamp: new Date().toISOString(),
-        metadata
-      }),
-      view_count: 0
-    };
-
-    // Step 6: Save to mock storage (replace with database in production)
-    mockEvermarks.push(evermarkData);
-    console.log('✅ Evermark created in mock storage:', evermarkData.token_id);
-
-    // Step 7: Calculate storage cost using MetadataKit
-    try {
-      const contentSize = JSON.stringify(metadata).length;
-      const storageCost = await AccurateArDrivePricing.calculateCost(contentSize);
-      console.log('💰 Estimated storage cost:', storageCost);
-    } catch (error) {
-      console.log('⚠️ Could not calculate storage cost:', error);
-    }
-
-    return NextResponse.json({
-      success: true,
-      tokenId: evermarkData.token_id,
-      evermark: {
-        id: evermarkData.token_id.toString(),
-        tokenId: evermarkData.token_id,
-        title: evermarkData.title,
-        description: evermarkData.description,
-        url: evermarkData.source_url,
-        createdAt: evermarkData.created_at,
-        metadata
-      },
-      message: 'Evermark created successfully! In production, this would be minted as an NFT on Base blockchain.'
-    });
 
   } catch (error) {
-    console.error('Evermark creation error:', error);
+    console.error('❌ POST Evermarks API error:', error);
     
     return NextResponse.json(
       { 
