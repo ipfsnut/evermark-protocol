@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -51,10 +51,10 @@ model Evermark {
   lastSyncedAt  DateTime? @map("last_synced_at")
   
   // System
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
   verified       Boolean  @default(false)
-  userId         String?  @map("user_id") @db.Uuid
+  userId         String?  @map("user_id")
   lastAccessedAt DateTime? @map("last_accessed_at")
   accessCount    Int      @default(0) @map("access_count")
   
@@ -67,7 +67,7 @@ model Evermark {
 
 // Users table for Farcaster integration
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid())
   fid         Int?     @unique // Farcaster ID
   walletAddress String? @map("wallet_address")
   username    String?
@@ -76,8 +76,8 @@ model User {
   bio         String?
   
   // Timestamps
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   
   // Relations
   evermarks Evermark[]
@@ -89,13 +89,13 @@ model User {
 
 // Voting system
 model Vote {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
   evermarkId Int      @map("evermark_id")
   weight     Int      @default(1)
   txHash     String?  @map("tx_hash")
   
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
   
   // Relations
   user     User     @relation(fields: [userId], references: [id])
@@ -107,14 +107,14 @@ model Vote {
 
 // Staking for voting power
 model Stake {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
   amount       String   // BigInt stored as string for precision
   lockedUntil  DateTime? @map("locked_until")
   txHash       String?  @map("tx_hash")
   
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   
   // Relations
   user User @relation(fields: [userId], references: [id])
@@ -124,7 +124,7 @@ model Stake {
 
 // Storage tracking
 model StorageRecord {
-  id           String   @id @default(uuid()) @db.Uuid
+  id           String   @id @default(uuid())
   evermarkId   Int      @map("evermark_id")
   ipfsHash     String?  @map("ipfs_hash")
   ardriveId    String?  @map("ardrive_id")
@@ -132,24 +132,24 @@ model StorageRecord {
   storageCost  String?  @map("storage_cost") // Decimal stored as string
   provider     String   // "ipfs", "ardrive", "supabase"
   
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
   
   @@map("storage_records")
 }
 
 // Content processing jobs
 model ProcessingJob {
-  id          String   @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid())
   evermarkId  Int?     @map("evermark_id")
   jobType     String   @map("job_type") // "metadata", "image", "storage"
   status      String   @default("pending") // "pending", "processing", "completed", "failed"
-  input       Json?    // Job input data
-  output      Json?    // Job output data
+  input       String?    // Job input data as JSON string
+  output      String?    // Job output data as JSON string
   error       String?  // Error message if failed
   retryCount  Int      @default(0) @map("retry_count")
   
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   
   @@map("processing_jobs")
 }
