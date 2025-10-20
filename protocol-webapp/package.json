@@ -23,6 +23,7 @@
     "@radix-ui/react-label": "^2.1.7",
     "@tanstack/react-query": "^5.59.0",
     "@vercel/sdk": "^1.13.9",
+    "abitype": "^1.0.8",
     "class-variance-authority": "^0.7.1",
     "dotenv": "^16.4.7",
     "next": "^15.0.0",
